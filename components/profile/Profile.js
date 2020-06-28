@@ -1,0 +1,425 @@
+import React, { Component } from 'react';
+import { View, Text, StyleSheet, Platform, ScrollView, TextInput, TouchableOpacity, StatusBar, Image, KeyboardAvoidingView } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faTasks, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
+import AsyncStorage from '@react-native-community/async-storage';
+import * as Localization from 'expo-localization';
+import i18n from 'i18n-js';
+import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+
+const tr = require('../../translations/tr.json');
+const en = require('../../translations/en.json');
+
+const apiRequest = require('../../utils/apiRequest');
+
+i18n.translations = { tr, en };
+
+i18n.locale = Localization.locale;
+i18n.fallbacks = true;
+
+const STATUS_BAR_HEIGHT = Platform.OS === 'ios' ? 40 : StatusBar.currentHeight;
+const NAVIGATION_BAR_HEIGHT = Platform.OS === 'ios' ? 80 : 80;
+
+export default class Profile extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      id: this.props.route.params.id,
+      email: "",
+      credit: "",
+      overall_credit: "",
+      waiting_credit: "",
+      currency_symbol: "",
+      original_name: "",
+      full_name: "",
+      year_of_birth: "",
+      gender: "",
+      country: "",
+      city: "",
+      school_type: "",
+      profession: "",
+      nationality: "",
+      interests: [],
+      select_input_id: null,
+      cities: [],
+      original_cities: [],
+      genders: [i18n.t('Female'), i18n.t('Male')],
+      original_genders: [i18n.t('Female'), i18n.t('Male')],
+      school_types: [],
+      original_school_types: [],
+      professions: [],
+      original_professions: [],
+      bank_account: "",
+      error: ""
+    };
+  }
+
+  engName = word => {
+    return word.toLocaleLowerCase().split('ş').join('s').split('ı').join('i').split('ö').join('o').split('ç').join('c').split('ü').join('u').split('ğ').join('g');
+  }
+
+  onSelectInputClick = type => {
+    if (this.state.select_input_id == type) {
+      this.setState({
+        select_input_id: null
+      });
+    } else {
+      this.setState({
+        select_input_id: type
+      });
+    }
+  }
+
+  onSelectInputChose = (type, value) => {
+    this.setState({
+      [type]: value,
+      select_input_id: null
+    });
+  }
+
+  onSelectInputChangeText = (array_name, text) => {
+    if (text.length)
+      this.setState(state => {
+        const array = state[`original_${array_name}`].filter(each => this.engName(each).includes(this.engName(text)));
+        
+        array.sort((a, b) => {
+          return this.engName(a).includes(this.engName(text)) < this.engName(b).includes(this.engName(text))
+        });
+
+        return { [array_name]: array };
+      });
+    else
+      this.setState({
+        [array_name]: this.state[`original_${array_name}`]
+      });
+  }
+
+  getCitiesAndSchoolTypesByCountry = (country) => {
+    apiRequest({
+      method: 'POST',
+      url: '/get_school_types_and_cities_by_country.php',
+      body: { country }
+    }, (err, data) => {
+      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
+
+      this.setState({
+        cities: data.cities,
+        original_cities: data.cities,
+        school_types: data.school_types,
+        original_school_types: data.school_types
+      });
+    });
+  }
+
+  getUser = () => {
+    apiRequest({
+      url: '/get_user.php',
+      method: 'POST',
+      body: {
+        id: this.state.id
+      }
+    }, (err, data) => {
+      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
+
+      this.setState({
+        email: data.email,
+        original_name: data.full_name,
+        full_name: data.full_name,
+        city: data.city,
+        country: data.country,
+        profession: data.profession,
+        year_of_birth: data.year_of_birth,
+        gender: data.gender,
+        nationality: data.nationality,
+        email: data.email,
+        school_type: data.school_type,
+        credit: data.money || 0,
+        waiting_credit: data.waiting_payment_amount || 0,
+        overall_credit: data.overall_payment_amount || 0,
+        currency_symbol: data.currency_symbol,
+        bank_account: data.bank_account
+      });
+
+      this.getCitiesAndSchoolTypesByCountry(data.country);
+    });
+  }
+
+  logoutButtonController  = async () => {
+    await AsyncStorage.removeItem('email');
+    await AsyncStorage.removeItem('password');
+
+    this.props.navigation.navigate('Register');
+  }
+
+  getCreditButtonController = () => {
+    if (!user.credit || user.credit < 20)
+      return alert(i18n.t('Your currency should be at least 20') + user.currency);
+
+    apiRequest({
+      url: '/submit_payment.php',
+      method: 'POST',
+      body: {
+        id: this.state.id
+      }
+    }, (err, data) => {
+      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
+
+      return this.props.navigation.push('Profile', { id: this.state.id });
+    });
+  }
+
+  editButtonController = () => {
+    if (!this.state.full_name.length || !this.state.city.length || !this.state.profession.length || !this.state.school_type.length)
+      return this.setState({ error: i18n.t('Please enter all the necessary information') });
+
+    if (!this.state.original_cities.includes(this.state.city) || !this.state.original_professions.includes(this.state.profession) || !this.state.original_school_types.includes(this.state.school_type))
+      return this.setState({ error: i18n.t('Please choose values from the drow down menu for country, city, gender, profession, and school inputs') });
+
+    apiRequest({
+      url: "/update_user.php",
+      method: 'POST',
+      body: {
+        id: this.state.id,
+        full_name: this.state.full_name,
+        city: this.state.city,
+        profession: this.state.profession,
+        school_type: this.state.school_type,
+        interests: []
+      }
+    }, (err, data) => {
+      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
+
+      this.props.navigation.push('Profile', { id: this.state.id });
+    });
+  }
+
+  componentDidMount = () => {
+    this.getUser();
+  }
+
+  render() {
+    return (
+      <View style={styles.main_wrapper}>
+        <View style={styles.header} >
+          <Image source={require('../../assets/logo.png')} style={styles.header_logo} ></Image>
+        </View>
+        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS == "ios" ? "padding" : "height"} >
+          <ScrollView style={styles.content} >
+            <TouchableOpacity activeOpacity={1} onPress={() => {this.onSelectInputClick(null)}}>
+              <Text style={styles.user_name} >{this.state.original_name}</Text>
+              <Text style={styles.user_info} >{this.state.country}, {this.state.year_of_birth}</Text>
+              <Text style={styles.user_price_info} >{i18n.t('Overall Credit')}: {this.state.overall_credit}{this.state.currency_symbol}   {i18n.t('Waiting Credit')}: {this.state.waiting_credit}{this.state.currency_symbol}</Text>
+              <Text style={styles.subtitle} >{i18n.t('Your current credit')}:</Text>
+              <View style={styles.title_wrapper} >
+                <Text style={styles.title} >{this.state.credit}</Text>
+                <Text style={styles.title_currency} >{this.state.currency_symbol}</Text>
+              </View>
+              <TouchableOpacity style={styles.get_credit_button} onPress={() => {this.getCreditButtonController()}} >
+                <Text style={styles.get_credit_text} >{i18n.t('Withdraw')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.bank_account_number} >{this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')}: {this.state.bank_account}</Text>
+              <TouchableOpacity style={{alignSelf: "center"}} onPress={() => {this.logoutButtonController()}} >
+                <Text style={styles.logout_text} >{i18n.t('Logout')}</Text>
+              </TouchableOpacity>
+              <TextInput
+                style={styles.each_input} placeholder={i18n.t('Name Surname')}
+                onChangeText={full_name => this.setState({ full_name })} onFocus={() => {this.onSelectInputClick(null)}}
+              >{this.state.full_name}</TextInput>
+              <View style={[styles.select_input_wrapper, {zIndex: 4}]} >
+                <TextInput
+                  style={[styles.select_input, {
+                    borderBottomWidth: this.state.select_input_id == "city" ? 0 : 2,
+                    borderBottomLeftRadius: this.state.select_input_id == "city" ? 0 : 30,
+                    borderBottomRightRadius: this.state.select_input_id == "city" ? 0 : 30
+                  }]} placeholder={i18n.t('City')}
+                  onFocus={() => {this.onSelectInputClick("city")}}
+                  onChangeText={(text) => {this.onSelectInputChangeText("cities", text)}}
+                >{this.state.city}</TextInput>
+                <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
+                  <ScrollView>
+                    { this.state.cities.map((each_city, key) =>
+                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
+                        <Text style={styles.each_select_input_text} >{each_city}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+              <View style={[styles.select_input_wrapper, {zIndex: 3}]} >
+                <TextInput
+                  style={[styles.select_input, {
+                    borderBottomWidth: this.state.select_input_id == "school_type" ? 0 : 2,
+                    borderBottomLeftRadius: this.state.select_input_id == "school_type" ? 0 : 30,
+                    borderBottomRightRadius: this.state.select_input_id == "school_type" ? 0 : 30
+                  }]} placeholder={i18n.t('Your last or active school')}
+                  onFocus={() => {this.onSelectInputClick("school_type")}}
+                  onChangeText={(text) => {this.onSelectInputChangeText("school_types", text)}}
+                >{this.state.school_type}</TextInput>
+                <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
+                  <ScrollView>
+                    { this.state.school_types.map((each_school_type, key) =>
+                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
+                        <Text style={styles.each_select_input_text} >{each_school_type}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+              <View style={[styles.select_input_wrapper, {zIndex: 2}]} >
+                <TextInput
+                  style={[styles.select_input, {
+                    borderBottomWidth: this.state.select_input_id == "profession" ? 0 : 2,
+                    borderBottomLeftRadius: this.state.select_input_id == "profession" ? 0 : 30,
+                    borderBottomRightRadius: this.state.select_input_id == "profession" ? 0 : 30
+                  }]} placeholder={i18n.t('Profession')}
+                  onFocus={() => {this.onSelectInputClick("profession")}}
+                  onChangeText={(text) => {this.onSelectInputChangeText("professions", text)}}
+                >{this.state.profession}</TextInput>
+                <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
+                  <ScrollView>
+                    { this.state.professions.map((each_profession, key) =>
+                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
+                        <Text style={styles.each_select_input_text} >{each_profession}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+              <Text style={styles.error_line} >{this.state.error}</Text>
+              <TouchableOpacity style={styles.start_button} onPress={() => {this.editButtonController()}} >
+                <Text style={styles.start_text} >{i18n.t('Edit')}</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+        <View style={styles.navigation_bar} >
+          <TouchableOpacity onPress={() => {this.props.navigation.push('History', {id: this.state.id})}} >
+            <FontAwesomeIcon icon={faTasks} color="rgb(80, 177, 238)" size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {this.props.navigation.push('Index', {id: this.state.id})}} >
+            <FontAwesomeIcon icon={faHome} color="rgb(80, 177, 238)" size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {this.props.navigation.push('Profile', {id: this.state.id})}} >
+            <FontAwesomeIcon icon={faUser} color="rgb(240, 84, 79)" size={28} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  main_wrapper: {
+    flex: 1, paddingTop: STATUS_BAR_HEIGHT, backgroundColor: "rgb(254, 254, 254)"
+  },
+  header: {
+    height: 75, backgroundColor: "rgb(254, 254, 254)",
+    borderBottomWidth: 2, borderBottomColor: "rgb(236, 236, 236)",
+    alignItems: "center", justifyContent: "center"
+  },
+  header_logo: {
+    height: 30, width: 150, resizeMode: "contain"
+  },
+  content: {
+    flex: 1, backgroundColor: "rgb(248, 248, 248)", padding: 20
+  },
+  user_name: {
+    color: "rgb(30, 30, 30)", fontWeight: "700", fontSize: 30,
+    alignSelf: "center", marginTop: 20
+  },
+  user_info: {
+    color: "rgb(30, 30, 30)", fontWeight: "400", fontSize: 17,
+    alignSelf: "center", marginTop: 5
+  },
+  user_price_info: {
+    color: "rgb(30, 30, 30)", fontWeight: "300", fontSize: 15,
+    alignSelf: "center", marginTop: 20
+  },
+  subtitle: {
+    color: "rgb(30, 30, 30)", fontWeight: "300", fontSize: 15,
+    alignSelf: "center", marginTop: 5
+  },
+  title_wrapper: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    alignSelf: "center", marginTop: 5
+  },
+  title: {
+    color: "rgb(30, 30, 30)", fontWeight: "600", fontSize: 35
+  },
+  title_currency: {
+    color: "rgb(80, 177, 238)", fontWeight: "800", fontSize: 35,
+    marginLeft: 5
+  },
+  get_credit_button: {
+    backgroundColor: "rgb(240, 84, 79)", height: 60, paddingLeft: 30, paddingRight: 30,
+    justifyContent: "center", alignItems: "center", borderRadius: 30,
+    marginTop: 20, alignSelf: "center", shadowOffset: {
+      width: 0, height: 2
+    }, shadowColor: "rgb(240, 84, 79)", shadowOpacity: 0.4, shadowRadius: 10
+  },
+  get_credit_text: {
+    color: "rgb(254, 254, 254)", fontWeight: "600", fontSize: 25
+  },
+  bank_account_number: {
+    color: "rgb(30, 30, 30)", fontSize: 16, fontWeight: "300",
+    marginTop: 10, alignSelf: "center"
+  },
+  logout_text: {
+    alignSelf: "center", marginTop: 20, marginBottom: 10,
+    color: "rgb(80, 177, 238)", fontWeight: "700", fontSize: 17
+  },
+  each_input: {
+    paddingLeft: 20, paddingRight: 20, flex: 1,
+    backgroundColor: "rgb(254, 254, 254)", height: 60,
+    borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderRadius: 30,
+    fontSize: 17, fontWeight: "600", color: "rgb(30, 30, 30)", marginTop: 20,
+    shadowColor: "rgb(236, 236, 236)", shadowOpacity: 0.7, shadowOffset: {
+      width: 3, height: 4
+    }
+  },
+  select_input_wrapper: {
+    height: 60, overflow: "visible", marginTop: 20
+  },
+  select_input: {
+    paddingLeft: 20, paddingRight: 20, flex: 1,
+    backgroundColor: "rgb(254, 254, 254)", minHeight: 60,
+    borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderRadius: 30,
+    fontSize: 17, fontWeight: "600", color: "rgb(30, 30, 30)",
+    shadowColor: "rgb(236, 236, 236)", shadowOpacity: 0.7, shadowOffset: {
+      width: 3, height: 4
+    }
+  },
+  select_content_wrapper: {
+    width: "100%", height: 150, minHeight: 150, backgroundColor: "rgb(254, 254, 254)",
+    borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderTopWidth: 0,
+    borderBottomLeftRadius: 30, borderBottomRightRadius: 30
+  },
+  each_select_input: {
+    borderTopWidth: 1, borderColor: "rgb(236, 236, 236)", height: 50,
+    justifyContent: "center",  alignItems: "center"
+  },
+  each_select_input_text: {
+    color: "rgb(30, 30, 30)", fontWeight: "300", fontSize: 15
+  },
+  error_line: {
+    marginTop: 30, textAlign: "center",
+    color: "rgb(240, 84, 79)", fontSize: 17, fontWeight: "600"
+  },
+  start_button: {
+    backgroundColor: "rgb(240, 84, 79)", height: 60, borderRadius: 30,
+    justifyContent: "center", alignItems: "center", marginTop: 30,
+    marginBottom: 100, shadowOffset: {
+      width: 0, height: 2
+    }, shadowColor: "rgb(240, 84, 79)", shadowOpacity: 0.5, shadowRadius: 10
+  },
+  start_text: {
+    color: "rgb(254, 254, 254)", fontWeight: "700", fontSize: 20
+  },
+  navigation_bar: {
+    height: NAVIGATION_BAR_HEIGHT, backgroundColor: "rgb(254, 254, 254)",
+    borderTopWidth: 2, borderTopColor: "rgb(236, 236, 236)",
+    flexDirection: "row", alignItems: "center", justifyContent: "space-evenly",
+    paddingLeft: 20, paddingRight: 20
+  }
+});

@@ -9,6 +9,8 @@ npm-debug.*
 *.orig.*
 web-build/
 web-report/
+.env
+utils/hashString.js
 
 # macOS
 .DS_Store
