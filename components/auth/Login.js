@@ -65,7 +65,7 @@ export default class Login extends Component {
         return this.setState({ error: i18n.t('An unknown error occured, please try again') });
 
       this.addUserToAsyncStorage(this.state.email, this.state.password, () => {
-        if (data.complated)
+        if (data.completed)
           return this.props.navigation.push('Index', { id: data.id });
         else
           return this.props.navigation.push('Complete', { id: data.id });

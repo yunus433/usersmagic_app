@@ -118,7 +118,12 @@ export default class Complete extends Component {
   }
 
   onSelectInputChose = (type, value) => {
-    if (type == "country") {
+    this.setState({
+      [type]: value,
+      select_input_id: null
+    });
+
+    if (type == "country")
       apiRequest({
         method: 'POST',
         url: '/get_school_types_and_cities_by_country.php',
@@ -129,22 +134,14 @@ export default class Complete extends Component {
         if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
         this.setState({
-          [type]: value,
           city: "",
           school_type: "",
-          select_input_id: null,
           cities: data.cities,
           original_cities: data.cities,
           school_types: data.school_types,
           original_school_types: data.school_types
         });
       });
-    } else {
-      this.setState({
-        [type]: value,
-        select_input_id: null
-      });
-    }
   }
 
   onSelectInputChangeText = (array_name, text) => {
@@ -221,7 +218,7 @@ export default class Complete extends Component {
 
   render() {
     return (
-      <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={styles.main_wrapper} keyboardVerticalOffset={50}  >
+      <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={styles.main_wrapper} >
         <ScrollView style={{backgroundColor: "transparent"}} >
           { this.state.active_page == 1 ?
             <TouchableOpacity activeOpacity={1} style={styles.content_wrapper} onPress={() => {this.onSelectInputClick(null)}}>
@@ -243,10 +240,10 @@ export default class Complete extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("countries", text)}}
                 >{this.state.country}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "country" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 4}} >
                     { this.state.countries.map((each_country, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("country", each_country)}} >
-                        <Text style={styles.each_select_input_text} >{each_country}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 4}]} key={key} onPress={() => {this.onSelectInputChose("country", each_country)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 4}]} >{each_country}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -263,10 +260,10 @@ export default class Complete extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("nationalities", text)}}
                 >{this.state.nationality}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "nationality" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 3}} >
                     { this.state.nationalities.map((each_nationality, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("nationality", each_nationality)}} >
-                        <Text style={styles.each_select_input_text} >{each_nationality}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 3}]} key={key} onPress={() => {this.onSelectInputChose("nationality", each_nationality)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 3}]} >{each_nationality}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -283,10 +280,10 @@ export default class Complete extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("genders", text)}}
                 >{this.state.gender}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "gender" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 2}} >
                     { this.state.genders.map((each_gender, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("gender", each_gender)}} >
-                        <Text style={styles.each_select_input_text} >{each_gender}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 2}]} key={key} onPress={() => {this.onSelectInputChose("gender", each_gender)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 2}]} >{each_gender}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -307,7 +304,7 @@ export default class Complete extends Component {
               <View style={styles.title_wrapper} >
                 <Text style={styles.title} >{i18n.t('Complete your account details to start')}</Text>
               </View>
-              <View style={[styles.select_input_wrapper, {zIndex: 5}]} >
+              <View style={[styles.select_input_wrapper, {zIndex: 4}]} >
                 <TextInput
                   style={[styles.select_input, {
                     borderBottomWidth: this.state.select_input_id == "city" ? 0 : 2,
@@ -317,17 +314,17 @@ export default class Complete extends Component {
                   onFocus={() => {this.onSelectInputClick("city")}}
                   onChangeText={(text) => {this.onSelectInputChangeText("cities", text)}}
                 >{this.state.city}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 5, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
+                <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
                   <ScrollView>
                     { this.state.cities.map((each_city, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
-                        <Text style={styles.each_select_input_text} >{each_city}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 4}]} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 4}]} >{each_city}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
                 </View>
               </View>
-              <View style={[styles.select_input_wrapper, {zIndex: 4}]} >
+              <View style={[styles.select_input_wrapper, {zIndex: 3}]} >
                 <TextInput
                   style={[styles.select_input, {
                     borderBottomWidth: this.state.select_input_id == "school_type" ? 0 : 2,
@@ -337,17 +334,17 @@ export default class Complete extends Component {
                   onFocus={() => {this.onSelectInputClick("school_type")}}
                   onChangeText={(text) => {this.onSelectInputChangeText("school_types", text)}}
                 >{this.state.school_type}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
-                  <ScrollView>
+                <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
+                  <ScrollView style={{zIndex: 3}} >
                     { this.state.school_types.map((each_school_type, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
-                        <Text style={styles.each_select_input_text} >{each_school_type}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 3}]} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 3}]} >{each_school_type}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
                 </View>
               </View>
-              <View style={[styles.select_input_wrapper, {zIndex: 3}]} >
+              <View style={[styles.select_input_wrapper, {zIndex: 2}]} >
                 <TextInput
                   style={[styles.select_input, {
                     borderBottomWidth: this.state.select_input_id == "profession" ? 0 : 2,
@@ -357,11 +354,11 @@ export default class Complete extends Component {
                   onFocus={() => {this.onSelectInputClick("profession")}}
                   onChangeText={(text) => {this.onSelectInputChangeText("professions", text)}}
                 >{this.state.profession}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
-                  <ScrollView>
+                <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
+                  <ScrollView style={{zIndex: 2}} >
                     { this.state.professions.map((each_profession, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
-                        <Text style={styles.each_select_input_text} >{each_profession}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 2}]} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 2}]} >{each_profession}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -372,7 +369,7 @@ export default class Complete extends Component {
                 onChangeText={year_of_birth => this.setState({ year_of_birth })} onFocus={() => {this.onSelectInputClick(null)}}
               >{this.state.year_of_birth}</TextInput>
               <TextInput
-                style={styles.each_input} placeholder={i18n.t('PayPal Number')} keyboardType="numeric"
+                style={styles.each_input} placeholder={this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')} keyboardType="numeric"
                 onChangeText={paypal_number => this.setState({ paypal_number })} onFocus={() => {this.onSelectInputClick(null)}}
               >{this.state.paypal_number}</TextInput>
               <Text style={styles.error_line} >{this.state.error}</Text>
@@ -404,13 +401,13 @@ const styles = StyleSheet.create({
     flex: 1, marginBottom: 20
   },
   title: {
-    fontSize: 30, color: "rgb(30, 30, 30)", fontWeight: "800"
+    fontSize: 30, color: "rgb(30, 30, 30)", fontWeight: Platform.OS == 'ios' ? "800" : "bold"
   },
   each_input: {
     paddingLeft: 20, paddingRight: 20, flex: 1,
     backgroundColor: "rgb(254, 254, 254)", height: 60,
     borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderRadius: 30,
-    fontSize: 17, fontWeight: "600", color: "rgb(30, 30, 30)", marginTop: 20,
+    fontSize: 17, fontWeight: Platform.OS == 'ios' ? "600" : "bold", color: "rgb(30, 30, 30)", marginTop: 20,
     shadowColor: "rgb(236, 236, 236)", shadowOpacity: 0.7, shadowOffset: {
       width: 3, height: 4
     }

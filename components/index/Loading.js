@@ -18,7 +18,7 @@ export default class Loading extends Component {
         }, (err, data) => {
           if (err || !data || data.error || !data.id) return this.props.navigation.navigate('Register');
 
-          if (data.complated)
+          if (data.completed)
             this.props.navigation.navigate('Index', { id: data.id });
           else
             this.props.navigation.navigate('Complete', { id: data.id });

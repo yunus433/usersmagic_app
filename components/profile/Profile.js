@@ -237,10 +237,10 @@ export default class Profile extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("cities", text)}}
                 >{this.state.city}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 4}} >
                     { this.state.cities.map((each_city, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
-                        <Text style={styles.each_select_input_text} >{each_city}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 4}]} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 4}]} >{each_city}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -257,10 +257,10 @@ export default class Profile extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("school_types", text)}}
                 >{this.state.school_type}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 3}} >
                     { this.state.school_types.map((each_school_type, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
-                        <Text style={styles.each_select_input_text} >{each_school_type}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 3}]} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 3}]} >{each_school_type}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
@@ -277,10 +277,10 @@ export default class Profile extends Component {
                   onChangeText={(text) => {this.onSelectInputChangeText("professions", text)}}
                 >{this.state.profession}</TextInput>
                 <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
-                  <ScrollView>
+                  <ScrollView style={{zIndex: 2}} >
                     { this.state.professions.map((each_profession, key) =>
-                      <TouchableOpacity style={styles.each_select_input} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
-                        <Text style={styles.each_select_input_text} >{each_profession}</Text>
+                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 2}]} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
+                        <Text style={[styles.each_select_input_text, {zIndex: 2}]} >{each_profession}</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
