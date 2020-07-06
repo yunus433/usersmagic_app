@@ -1,18 +1,19 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TextInput, TouchableOpacity, StatusBar, Image, KeyboardAvoidingView } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet, Platform, ScrollView, TextInput, TouchableOpacity, StatusBar, Image, KeyboardAvoidingView } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTasks, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 import * as Localization from 'expo-localization';
 import i18n from 'i18n-js';
-import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
+const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
 const apiRequest = require('../../utils/apiRequest');
 
-i18n.translations = { tr, en };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;
@@ -26,6 +27,7 @@ export default class Profile extends Component {
 
     this.state = {
       id: this.props.route.params.id,
+      user: {},
       email: "",
       credit: "",
       overall_credit: "",
@@ -36,8 +38,11 @@ export default class Profile extends Component {
       year_of_birth: "",
       gender: "",
       country: "",
+      original_city: "",
       city: "",
+      original_school_type: "",
       school_type: "",
+      original_profession: "",
       profession: "",
       nationality: "",
       interests: [],
@@ -51,7 +56,11 @@ export default class Profile extends Component {
       professions: [],
       original_professions: [],
       bank_account: "",
-      error: ""
+      payment_number: "",
+      error: "",
+      payment_error: "",
+      payment_info_wrapper_open: false,
+      loading: true
     };
   }
 
@@ -69,6 +78,23 @@ export default class Profile extends Component {
         select_input_id: type
       });
     }
+  }
+
+  getProfessions = () => {
+    apiRequest({
+      method: 'POST',
+      url: '/get_job_types.php',
+      body: {
+        lang: Localization.locale
+      }
+    }, (err, data) => {
+      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
+
+      this.setState({
+        professions: data.job_types,
+        original_professions: data.job_types
+      });
+    });
   }
 
   onSelectInputChose = (type, value) => {
@@ -126,22 +152,60 @@ export default class Profile extends Component {
         email: data.email,
         original_name: data.full_name,
         full_name: data.full_name,
+        original_city: data.city,
         city: data.city,
         country: data.country,
+        original_profession: data.profession,
         profession: data.profession,
         year_of_birth: data.year_of_birth,
         gender: data.gender,
         nationality: data.nationality,
         email: data.email,
+        original_school_type: data.school_type,
         school_type: data.school_type,
         credit: data.money || 0,
         waiting_credit: data.waiting_payment_amount || 0,
         overall_credit: data.overall_payment_amount || 0,
         currency_symbol: data.currency_symbol,
-        bank_account: data.bank_account
+        bank_account: data.bank_account,
+        loading: false
       });
 
       this.getCitiesAndSchoolTypesByCountry(data.country);
+    });
+  }
+
+  sendPaymentInfo = () => {
+    if (!this.state.payment_number.length)
+      return this.setState({ payment_error: i18n.t('Please enter your number') });
+
+    apiRequest({
+      url: '/complete_user.php',
+      method: 'POST',
+      body: {
+        id: this.state.id,
+        full_name: this.state.original_name,
+        city: this.state.original_city,
+        country: this.state.country,
+        profession: this.state.original_profession,
+        year_of_birth: this.state.year_of_birth,
+        gender: this.state.gender,
+        interests: this.state.interests,
+        nationality: this.state.nationality,
+        school_type: this.state.original_school_type,
+        bank_account: this.state.payment_number
+      }
+    }, (err, data) => {
+      if (err) return this.setState({ payment_error: i18n.t('An unknown error occured, please try again') });
+
+      if (data.error && data.error == "bank_account_is_already_captured")
+        return this.setState({ payment_error: i18n.t('This ID is already in use') });
+
+      if (data.err) return this.setState({ payment_error: i18n.t('An unknown error occured, please try again') });
+
+      return this.setState({
+        bank_account: this.state.payment_number
+      });
     });
   }
 
@@ -153,8 +217,11 @@ export default class Profile extends Component {
   }
 
   getCreditButtonController = () => {
-    if (!user.credit || user.credit < 20)
-      return alert(i18n.t('Your currency should be at least 20') + user.currency);
+    if (!this.state.bank_account.length)
+      return this.setState({ payment_info_wrapper_open: true });
+
+    if (!this.state.credit || this.state.credit < 20)
+      return alert(i18n.t('Your currency should be at least 20') + this.state.currency_symbol);
 
     apiRequest({
       url: '/submit_payment.php',
@@ -196,6 +263,7 @@ export default class Profile extends Component {
 
   componentDidMount = () => {
     this.getUser();
+    this.getProfessions();
   }
 
   render() {
@@ -204,95 +272,106 @@ export default class Profile extends Component {
         <View style={styles.header} >
           <Image source={require('../../assets/logo.png')} style={styles.header_logo} ></Image>
         </View>
-        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS == "ios" ? "padding" : "height"} >
-          <ScrollView style={styles.content} >
-            <TouchableOpacity activeOpacity={1} onPress={() => {this.onSelectInputClick(null)}}>
-              <Text style={styles.user_name} >{this.state.original_name}</Text>
-              <Text style={styles.user_info} >{this.state.country}, {this.state.year_of_birth}</Text>
-              <Text style={styles.user_price_info} >{i18n.t('Overall Credit')}: {this.state.overall_credit}{this.state.currency_symbol}   {i18n.t('Waiting Credit')}: {this.state.waiting_credit}{this.state.currency_symbol}</Text>
-              <Text style={styles.subtitle} >{i18n.t('Your current credit')}:</Text>
-              <View style={styles.title_wrapper} >
-                <Text style={styles.title} >{this.state.credit}</Text>
-                <Text style={styles.title_currency} >{this.state.currency_symbol}</Text>
-              </View>
-              <TouchableOpacity style={styles.get_credit_button} onPress={() => {this.getCreditButtonController()}} >
-                <Text style={styles.get_credit_text} >{i18n.t('Withdraw')}</Text>
-              </TouchableOpacity>
-              <Text style={styles.bank_account_number} >{this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')}: {this.state.bank_account}</Text>
-              <TouchableOpacity style={{alignSelf: "center"}} onPress={() => {this.logoutButtonController()}} >
-                <Text style={styles.logout_text} >{i18n.t('Logout')}</Text>
-              </TouchableOpacity>
-              <TextInput
-                style={styles.each_input} placeholder={i18n.t('Name Surname')}
-                onChangeText={full_name => this.setState({ full_name })} onFocus={() => {this.onSelectInputClick(null)}}
-              >{this.state.full_name}</TextInput>
-              <View style={[styles.select_input_wrapper, {zIndex: 4}]} >
-                <TextInput
-                  style={[styles.select_input, {
-                    borderBottomWidth: this.state.select_input_id == "city" ? 0 : 2,
-                    borderBottomLeftRadius: this.state.select_input_id == "city" ? 0 : 30,
-                    borderBottomRightRadius: this.state.select_input_id == "city" ? 0 : 30
-                  }]} placeholder={i18n.t('City')}
-                  onFocus={() => {this.onSelectInputClick("city")}}
-                  onChangeText={(text) => {this.onSelectInputChangeText("cities", text)}}
-                >{this.state.city}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
-                  <ScrollView style={{zIndex: 4}} >
-                    { this.state.cities.map((each_city, key) =>
-                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 4}]} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
-                        <Text style={[styles.each_select_input_text, {zIndex: 4}]} >{each_city}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </ScrollView>
+        { this.state.loading ? 
+          <View style={styles.content} >
+            <ActivityIndicator style={{marginTop: "70%"}} size="small" color="rgb(112, 112, 112)" />
+          </View>
+          :
+          <KeyboardAvoidingView style={{flex: 1, width: "100%"}} behavior={Platform.OS == "ios" ? "padding" : "height"} >
+            <ScrollView style={styles.content} >
+              <TouchableOpacity activeOpacity={1} onPress={() => {this.onSelectInputClick(null)}}>
+                <Text style={styles.user_name} >{this.state.original_name}</Text>
+                <Text style={styles.user_info} >{this.state.country}, {this.state.year_of_birth}</Text>
+                <Text style={styles.user_price_info} >{i18n.t('Overall Credit')}: {this.state.overall_credit}{this.state.currency_symbol}   {i18n.t('Waiting Credit')}: {this.state.waiting_credit}{this.state.currency_symbol}</Text>
+                <Text style={styles.subtitle} >{i18n.t('Your current credit')}:</Text>
+                <View style={styles.title_wrapper} >
+                  <Text style={styles.title} >{this.state.credit}</Text>
+                  <Text style={styles.title_currency} >{this.state.currency_symbol}</Text>
                 </View>
-              </View>
-              <View style={[styles.select_input_wrapper, {zIndex: 3}]} >
+                <TouchableOpacity style={styles.get_credit_button} onPress={() => {this.getCreditButtonController()}} >
+                  <Text style={styles.get_credit_text} >{i18n.t('Withdraw')}</Text>
+                </TouchableOpacity>
+                { this.state.bank_account.length ?
+                  <Text style={styles.bank_account_number} >{this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')}: {this.state.bank_account}</Text>
+                  :
+                  <View></View>
+                }
+                <TouchableOpacity style={{alignSelf: "center"}} onPress={() => {this.logoutButtonController()}} >
+                  <Text style={styles.logout_text} >{i18n.t('Logout')}</Text>
+                </TouchableOpacity>
                 <TextInput
-                  style={[styles.select_input, {
-                    borderBottomWidth: this.state.select_input_id == "school_type" ? 0 : 2,
-                    borderBottomLeftRadius: this.state.select_input_id == "school_type" ? 0 : 30,
-                    borderBottomRightRadius: this.state.select_input_id == "school_type" ? 0 : 30
-                  }]} placeholder={i18n.t('Your last or active school')}
-                  onFocus={() => {this.onSelectInputClick("school_type")}}
-                  onChangeText={(text) => {this.onSelectInputChangeText("school_types", text)}}
-                >{this.state.school_type}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
-                  <ScrollView style={{zIndex: 3}} >
-                    { this.state.school_types.map((each_school_type, key) =>
-                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 3}]} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
-                        <Text style={[styles.each_select_input_text, {zIndex: 3}]} >{each_school_type}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </ScrollView>
+                  style={styles.each_input} placeholder={i18n.t('Name Surname')}
+                  onChangeText={full_name => this.setState({ full_name })} onFocus={() => {this.onSelectInputClick(null)}}
+                >{this.state.full_name}</TextInput>
+                <View style={[styles.select_input_wrapper, {zIndex: 4}]} >
+                  <TextInput
+                    style={[styles.select_input, {
+                      borderBottomWidth: this.state.select_input_id == "city" ? 0 : 2,
+                      borderBottomLeftRadius: this.state.select_input_id == "city" ? 0 : 30,
+                      borderBottomRightRadius: this.state.select_input_id == "city" ? 0 : 30
+                    }]} placeholder={i18n.t('City')}
+                    onFocus={() => {this.onSelectInputClick("city")}}
+                    onChangeText={(text) => {this.onSelectInputChangeText("cities", text)}}
+                  >{this.state.city}</TextInput>
+                  <View style={[styles.select_content_wrapper, {zIndex: 4, display: this.state.select_input_id == "city" ? "flex" : "none"}]} >
+                    <ScrollView style={{zIndex: 4}} >
+                      { this.state.cities.map((each_city, key) =>
+                        <TouchableOpacity style={[styles.each_select_input, {zIndex: 4}]} key={key} onPress={() => {this.onSelectInputChose("city", each_city)}} >
+                          <Text style={[styles.each_select_input_text, {zIndex: 4}]} >{each_city}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </ScrollView>
+                  </View>
                 </View>
-              </View>
-              <View style={[styles.select_input_wrapper, {zIndex: 2}]} >
-                <TextInput
-                  style={[styles.select_input, {
-                    borderBottomWidth: this.state.select_input_id == "profession" ? 0 : 2,
-                    borderBottomLeftRadius: this.state.select_input_id == "profession" ? 0 : 30,
-                    borderBottomRightRadius: this.state.select_input_id == "profession" ? 0 : 30
-                  }]} placeholder={i18n.t('Profession')}
-                  onFocus={() => {this.onSelectInputClick("profession")}}
-                  onChangeText={(text) => {this.onSelectInputChangeText("professions", text)}}
-                >{this.state.profession}</TextInput>
-                <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
-                  <ScrollView style={{zIndex: 2}} >
-                    { this.state.professions.map((each_profession, key) =>
-                      <TouchableOpacity style={[styles.each_select_input, {zIndex: 2}]} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
-                        <Text style={[styles.each_select_input_text, {zIndex: 2}]} >{each_profession}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </ScrollView>
+                <View style={[styles.select_input_wrapper, {zIndex: 3}]} >
+                  <TextInput
+                    style={[styles.select_input, {
+                      borderBottomWidth: this.state.select_input_id == "school_type" ? 0 : 2,
+                      borderBottomLeftRadius: this.state.select_input_id == "school_type" ? 0 : 30,
+                      borderBottomRightRadius: this.state.select_input_id == "school_type" ? 0 : 30
+                    }]} placeholder={i18n.t('Your last or active school')}
+                    onFocus={() => {this.onSelectInputClick("school_type")}}
+                    onChangeText={(text) => {this.onSelectInputChangeText("school_types", text)}}
+                  >{this.state.school_type}</TextInput>
+                  <View style={[styles.select_content_wrapper, {zIndex: 3, display: this.state.select_input_id == "school_type" ? "flex" : "none"}]} >
+                    <ScrollView style={{zIndex: 3}} >
+                      { this.state.school_types.map((each_school_type, key) =>
+                        <TouchableOpacity style={[styles.each_select_input, {zIndex: 3}]} key={key} onPress={() => {this.onSelectInputChose("school_type", each_school_type)}} >
+                          <Text style={[styles.each_select_input_text, {zIndex: 3}]} >{each_school_type}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </ScrollView>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.error_line} >{this.state.error}</Text>
-              <TouchableOpacity style={styles.start_button} onPress={() => {this.editButtonController()}} >
-                <Text style={styles.start_text} >{i18n.t('Edit')}</Text>
+                <View style={[styles.select_input_wrapper, {zIndex: 2}]} >
+                  <TextInput
+                    style={[styles.select_input, {
+                      borderBottomWidth: this.state.select_input_id == "profession" ? 0 : 2,
+                      borderBottomLeftRadius: this.state.select_input_id == "profession" ? 0 : 30,
+                      borderBottomRightRadius: this.state.select_input_id == "profession" ? 0 : 30
+                    }]} placeholder={i18n.t('Profession')}
+                    onFocus={() => {this.onSelectInputClick("profession")}}
+                    onChangeText={(text) => {this.onSelectInputChangeText("professions", text)}}
+                  >{this.state.profession}</TextInput>
+                  <View style={[styles.select_content_wrapper, {zIndex: 2, display: this.state.select_input_id == "profession" ? "flex" : "none"}]} >
+                    <ScrollView style={{zIndex: 2}} >
+                      { this.state.professions.map((each_profession, key) =>
+                        <TouchableOpacity style={[styles.each_select_input, {zIndex: 2}]} key={key} onPress={() => {this.onSelectInputChose("profession", each_profession)}} >
+                          <Text style={[styles.each_select_input_text, {zIndex: 2}]} >{each_profession}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </ScrollView>
+                  </View>
+                </View>
+                <Text style={styles.error_line} >{this.state.error}</Text>
+                <TouchableOpacity style={styles.start_button} onPress={() => {this.editButtonController()}} >
+                  <Text style={styles.start_text} >{i18n.t('Edit')}</Text>
+                </TouchableOpacity>
+                <Text style={styles.email_info} >{i18n.t('Contact hello@usersmagiccom if you have any problem concerning our services We will respond you within a week')}</Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        }
         <View style={styles.navigation_bar} >
           <TouchableOpacity onPress={() => {this.props.navigation.push('History', {id: this.state.id})}} >
             <FontAwesomeIcon icon={faTasks} color="rgb(80, 177, 238)" size={28} />
@@ -304,6 +383,26 @@ export default class Profile extends Component {
             <FontAwesomeIcon icon={faUser} color="rgb(240, 84, 79)" size={28} />
           </TouchableOpacity>
         </View>
+        { this.state.payment_info_wrapper_open ?
+          <View style={styles.payment_info_wrapper} >
+            <Text style={styles.payment_info_title} >{this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')}</Text>
+            <Text style={styles.payment_info_explanation} >{i18n.t('You cannot change your payment information once you enter Please contact our team if any error occurs')}</Text>
+            <TextInput style={styles.payment_info_input} placeholder={this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')}
+              onChangeText={payment_number => this.setState({ payment_number })}
+            >{this.state.payment_number}</TextInput>
+            <TouchableOpacity style={styles.payment_send_button} onPress={() => {this.sendPaymentInfo()}} >
+              <Text style={styles.payment_send_button_text} >{i18n.t('Send')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.payment_error_line} >{this.state.payment_error}</Text>
+          </View>
+          :
+          <View></View>
+        }
+        { this.state.payment_info_wrapper_open ?
+          <TouchableOpacity style={styles.payment_close_area} onPress={() => { this.setState({ payment_info_wrapper_open: false })} } ></TouchableOpacity>
+          :
+          <View></View>
+        }
       </View>
     );
   }
@@ -311,18 +410,19 @@ export default class Profile extends Component {
 
 const styles = StyleSheet.create({
   main_wrapper: {
-    flex: 1, paddingTop: STATUS_BAR_HEIGHT, backgroundColor: "rgb(254, 254, 254)"
+    flex: 1, paddingTop: STATUS_BAR_HEIGHT, backgroundColor: "rgb(254, 254, 254)",
+    justifyContent: "center", alignItems: "center"
   },
   header: {
     height: 75, backgroundColor: "rgb(254, 254, 254)",
     borderBottomWidth: 2, borderBottomColor: "rgb(236, 236, 236)",
-    alignItems: "center", justifyContent: "center"
+    alignItems: "center", justifyContent: "center", width: "100%"
   },
   header_logo: {
     height: 30, width: 150, resizeMode: "contain"
   },
   content: {
-    flex: 1, backgroundColor: "rgb(248, 248, 248)", padding: 20
+    flex: 1, backgroundColor: "rgb(248, 248, 248)", padding: 20, width: "100%"
   },
   user_name: {
     color: "rgb(30, 30, 30)", fontWeight: "700", fontSize: 30,
@@ -393,7 +493,7 @@ const styles = StyleSheet.create({
   select_content_wrapper: {
     width: "100%", height: 150, minHeight: 150, backgroundColor: "rgb(254, 254, 254)",
     borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderTopWidth: 0,
-    borderBottomLeftRadius: 30, borderBottomRightRadius: 30
+    borderBottomLeftRadius: 30, borderBottomRightRadius: 30, position: "absolute", marginTop: 60
   },
   each_select_input: {
     borderTopWidth: 1, borderColor: "rgb(236, 236, 236)", height: 50,
@@ -409,17 +509,61 @@ const styles = StyleSheet.create({
   start_button: {
     backgroundColor: "rgb(240, 84, 79)", height: 60, borderRadius: 30,
     justifyContent: "center", alignItems: "center", marginTop: 30,
-    marginBottom: 100, shadowOffset: {
+    marginBottom: 20, shadowOffset: {
       width: 0, height: 2
     }, shadowColor: "rgb(240, 84, 79)", shadowOpacity: 0.5, shadowRadius: 10
   },
   start_text: {
     color: "rgb(254, 254, 254)", fontWeight: "700", fontSize: 20
   },
+  email_info: {
+    color: "rgb(30, 30, 30)", fontWeight: "300", fontSize: 17,
+    marginBottom: 100, textAlign: "center"
+  },
   navigation_bar: {
     height: NAVIGATION_BAR_HEIGHT, backgroundColor: "rgb(254, 254, 254)",
     borderTopWidth: 2, borderTopColor: "rgb(236, 236, 236)",
     flexDirection: "row", alignItems: "center", justifyContent: "space-evenly",
-    paddingLeft: 20, paddingRight: 20
+    paddingLeft: 20, paddingRight: 20, width: "100%"
+  },
+  payment_info_wrapper: {
+    position: "absolute", backgroundColor: "rgb(254, 254, 254)", padding: 20,
+    borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderRadius: 15,
+    width: "90%", zIndex: 2
+  },
+  payment_info_title: {
+    color: "rgb(80, 177, 238)", fontSize: 17, fontWeight: "800",
+    marginBottom: 5
+  },
+  payment_info_explanation: {
+    color: "rgb(30, 30, 30)", fontSize: 15, fontWeight: "300",
+    marginBottom: 20
+  },
+  payment_info_input: {
+    paddingLeft: 20, paddingRight: 20,
+    backgroundColor: "rgb(254, 254, 254)", height: 60,
+    borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderRadius: 30,
+    fontSize: 17, fontWeight: "600", color: "rgb(30, 30, 30)",
+    shadowColor: "rgb(236, 236, 236)", shadowOpacity: 0.7, shadowOffset: {
+      width: 3, height: 4
+    }
+  },
+  payment_error_line: {
+    marginTop: 20, textAlign: "center",
+    color: "rgb(240, 84, 79)", fontSize: 17, fontWeight: "600"
+  },
+  payment_send_button: {
+    backgroundColor: "rgb(240, 84, 79)", height: 60, borderRadius: 30,
+    justifyContent: "center", alignItems: "center", marginTop: 20,
+    shadowOffset: {
+      width: 0, height: 2
+    }, shadowColor: "rgb(240, 84, 79)", shadowOpacity: 0.5, shadowRadius: 10
+  },
+  payment_send_button_text: {
+    color: "rgb(254, 254, 254)", fontWeight: "700", fontSize: 20
+  },
+  payment_close_area: {
+    position: "absolute", width: "100%", height: "100%",
+    backgroundColor: "transparent"
   }
 });

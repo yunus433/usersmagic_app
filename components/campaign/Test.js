@@ -10,8 +10,10 @@ const apiRequest = require('../../utils/apiRequest');
 
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
+const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
-i18n.translations = { tr, en };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;
@@ -24,8 +26,8 @@ export default class Test extends Component {
 
     this.state = {
       id: this.props.route.params.id,
-      campaign_id: this.props.route.params.campaign_id,
-      campaign: {},
+      campaign_id: this.props.route.params.campaign.campaign_id,
+      campaign: this.props.route.params.campaign,
       test_questions: [],
       test_answers: [],
       error: ""
@@ -120,7 +122,6 @@ export default class Test extends Component {
         campaign_id: this.state.campaign_id
       }
     }, (err, data) => {
-      console.log(err, data);
       if (err || !data || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
       if (this.props.route.params.test_answers)
@@ -141,22 +142,6 @@ export default class Test extends Component {
     });
   }
 
-  getCampaign = () => {
-    apiRequest({
-      url: '/get_campaign.php',
-      method: 'POST',
-      body: {
-        campaign_id: this.state.campaign_id
-      }
-    }, (err, data) => {
-      if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
-
-      this.setState({
-        campaign: data.campaign
-      });
-    })
-  }
-
   saveTestAnswers = () => {
     apiRequest({
       url: '/save_test_result.php',
@@ -169,12 +154,12 @@ export default class Test extends Component {
     }, (err, data) => {
       if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
-      this.props.navigation.navigate('History', { id: this.state.id });
+      this.props.navigation.push('History', { id: this.state.id });
     });
   }
 
   submitTestAnswers = () => {
-    if (!this.state.test_answers.filter(each => !each.length).length)
+    if (this.state.test_answers.filter(each => !each.length).length)
       return this.setState({ error: i18n.t('Please fill every question in the test before submit your answers') });
 
     apiRequest({
@@ -188,7 +173,7 @@ export default class Test extends Component {
     }, (err, data) => {
       if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
-      this.props.navigation.navigate('History', { id: this.state.id });
+      this.props.navigation.push('History', { id: this.state.id });
     });
   }
 
@@ -204,9 +189,10 @@ export default class Test extends Component {
         </View>
         <ScrollView style={styles.content} >
           <View>
-            <Text style={styles.title} >{this.state.campaign.name}</Text>
-            <Text style={styles.subtitle} >{this.state.campaign.description}</Text>
+            <Text style={styles.title} >{this.state.campaign.campaign_name}</Text>
+            <Text style={styles.subtitle} >{this.state.campaign.campaign_detail}</Text>
             { this.state.test_questions.map((question, key) => this.createQuestion(question, key) )}
+            <View style={{height: 100}} ></View>
           </View>
         </ScrollView>
         <View style={styles.bottom_bar} >
@@ -285,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgb(80, 177, 238)", justifyContent: "center", alignItems: "center"
   },
   error_text: {
-    flex: 1, overflow: "hidden",
+    flex: 1, overflow: "hidden", textAlign: "center", marginRight: 10,
     color: "rgb(240, 84, 79)", fontSize: 15, fontWeight: "600"
   },
   save_button: {

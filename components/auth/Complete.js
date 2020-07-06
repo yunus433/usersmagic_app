@@ -8,8 +8,9 @@ const apiRequest = require('../../utils/apiRequest');
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
 const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
-i18n.translations = { tr, en, de };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;
@@ -45,7 +46,6 @@ export default class Complete extends Component {
       original_professions: [],
       nationalities: [],
       original_nationalities: [],
-      paypal_number: "",
       error: ""
     };
   }
@@ -164,7 +164,7 @@ export default class Complete extends Component {
   completePageSendController = () => {
     this.setState({ select_input_id: null });
 
-    if (!this.state.id.length || !this.state.paypal_number || !this.state.nationality || !this.state.full_name.length || !this.state.city.length || !this.state.country.length || !this.state.profession.length || !this.state.year_of_birth.length || !this.state.gender.length || !this.state.school_type.length)
+    if (!this.state.id.length || !this.state.nationality || !this.state.full_name.length || !this.state.city.length || !this.state.country.length || !this.state.profession.length || !this.state.year_of_birth.length || !this.state.gender.length || !this.state.school_type.length)
       return this.setState({ error: i18n.t('Please enter all the necessary information') });
 
     if (!this.state.original_countries.includes(this.state.country) || !this.state.original_cities.includes(this.state.city) || !this.state.original_genders.includes(this.state.gender) || !this.state.original_professions.includes(this.state.profession) || !this.state.original_school_types.includes(this.state.school_type))
@@ -184,7 +184,7 @@ export default class Complete extends Component {
         interests: this.state.interests,
         nationality: this.state.nationality,
         school_type: this.state.school_type,
-        bank_account: this.state.paypal_number
+        bank_account: ""
       }
     }, (err, data) => {
       if (err) return this.setState({ error: i18n.t('An unknown error occured, please try again') });
@@ -368,10 +368,6 @@ export default class Complete extends Component {
                 style={styles.each_input} placeholder={i18n.t('Birth Year')} keyboardType="numeric"
                 onChangeText={year_of_birth => this.setState({ year_of_birth })} onFocus={() => {this.onSelectInputClick(null)}}
               >{this.state.year_of_birth}</TextInput>
-              <TextInput
-                style={styles.each_input} placeholder={this.state.country == "Türkiye" ? i18n.t('Papara ID') : i18n.t('PayPal ID')} keyboardType="numeric"
-                onChangeText={paypal_number => this.setState({ paypal_number })} onFocus={() => {this.onSelectInputClick(null)}}
-              >{this.state.paypal_number}</TextInput>
               <Text style={styles.error_line} >{this.state.error}</Text>
               <TouchableOpacity style={styles.start_button} onPress={() => {this.completePageSendController()}} >
                 <Text style={styles.start_text} >{i18n.t('Finish')}</Text>
@@ -427,7 +423,7 @@ const styles = StyleSheet.create({
   select_content_wrapper: {
     width: "100%", height: 150, minHeight: 150, backgroundColor: "rgb(254, 254, 254)",
     borderColor: "rgb(236, 236, 236)", borderWidth: 2, borderTopWidth: 0,
-    borderBottomLeftRadius: 30, borderBottomRightRadius: 30
+    borderBottomLeftRadius: 30, borderBottomRightRadius: 30, position: "absolute", marginTop: 60
   },
   each_select_input: {
     borderTopWidth: 1, borderColor: "rgb(236, 236, 236)", height: 50,

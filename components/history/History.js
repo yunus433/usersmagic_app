@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTasks, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
 import * as Localization from 'expo-localization';
@@ -7,10 +7,12 @@ import i18n from 'i18n-js';
 
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
+const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
 const apiRequest = require('../../utils/apiRequest');
 
-i18n.translations = { tr, en };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;
@@ -24,7 +26,8 @@ export default class History extends Component {
 
     this.state = {
       id: this.props.route.params.id,
-      campaigns: []
+      campaigns: [],
+      loading: true
     };
   }
 
@@ -39,7 +42,8 @@ export default class History extends Component {
       if (err || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
       this.setState({
-        campaigns: data.old_campaigns
+        campaigns: data.old_campaigns,
+        loading: false
       });
     });
   }
@@ -47,7 +51,7 @@ export default class History extends Component {
   getSavedTestQuestions = (campaign) => {
     this.props.navigation.navigate('Test', {
       id: this.state.id,
-      campaign_id: campaign.campaign_id,
+      campaign,
       test_answers: campaign.saved_answers ? campaign.saved_answers : null
     });
   }
@@ -109,10 +113,15 @@ export default class History extends Component {
               </View>
             )
           }) }
-          { !this.state.campaigns.length ?
+          { !this.state.campaigns.length && !this.state.loading ?
             <Text style={styles.no_campaign_text} >{i18n.t('You didn\'t join any campaign yet')}</Text>
             :
             <View style={{flex: 1, height: 50}} ></View>
+          }
+          { this.state.loading ?
+            <ActivityIndicator style={{marginTop: "50%"}} size="small" color="rgb(112, 112, 112)" />
+            :
+            <View></View>
           }
           <View style={{flex: 1, height: 50}} ></View>
         </ScrollView>

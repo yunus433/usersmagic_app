@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTasks, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
 import * as Localization from 'expo-localization';
@@ -9,8 +9,10 @@ const apiRequest = require('../../utils/apiRequest');
 
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
+const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
-i18n.translations = { tr, en };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;
@@ -24,14 +26,15 @@ export default class Index extends Component {
 
     this.state = {
       id: this.props.route.params.id,
-      campaigns: []
+      campaigns: [],
+      loading: true
     };
   }
 
-  joinCampaignButton = (campaign_id) => {
+  joinCampaignButton = (campaign) => {
     this.props.navigation.navigate('Test', {
       id: this.state.id,
-      campaign_id
+      campaign
     });
   }
 
@@ -46,7 +49,8 @@ export default class Index extends Component {
       if (err || !data || data.error) return alert(i18n.t('An unknown error occured, please try again'));
 
       this.setState({
-        campaigns: data.campaigns
+        campaigns: data.campaigns,
+        loading: false
       });
     });
   }
@@ -62,7 +66,7 @@ export default class Index extends Component {
             return (
               <TouchableOpacity key={key} style={styles.each_campaign_wrapper} >
                 <View style={styles.campaign_inner_wrapper} >
-                  <Image source={{uri: campaign.photo}} style={styles.image} ></Image>
+                  <Image source={{uri: campaign.photo}} style={styles.campaign_photo} ></Image>
                   <View style={styles.campaign_content_wrapper} >
                     <Text style={styles.campaign_title} numberOfLines={2} lineBreakMode="tail" >{campaign.campaign_name}</Text>
                     <Text style={styles.campaign_description} numberOfLines={3} lineBreakMode="tail" >{campaign.campaign_detail}</Text>
@@ -72,16 +76,21 @@ export default class Index extends Component {
                     </View>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.campaign_join_button} onPress={() => {this.joinCampaignButton(campaign.campaign_id)}} >
+                <TouchableOpacity style={styles.campaign_join_button} onPress={() => {this.joinCampaignButton(campaign)}} >
                   <Text style={styles.campaign_join_text} >{i18n.t('Join')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             )
           }) }
-          { !this.state.campaigns.length ?
+          { !this.state.campaigns.length && !this.state.loading ?
             <Text style={styles.no_campaign_text} >{i18n.t('There are no new campaigns for you right now, please check it again later!')}</Text>
             :
             <View style={{flex: 1, height: 50}} ></View>
+          }
+          { this.state.loading ?
+            <ActivityIndicator style={{marginTop: "50%"}} size="small" color="rgb(112, 112, 112)" />
+            :
+            <View></View>
           }
         </ScrollView>
         <View style={styles.navigation_bar} >

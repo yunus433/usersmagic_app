@@ -9,8 +9,9 @@ const apiRequest = require('../../utils/apiRequest');
 const tr = require('../../translations/tr.json');
 const en = require('../../translations/en.json');
 const de = require('../../translations/de.json');
+const fr = require('../../translations/fr.json');
 
-i18n.translations = { tr, en, de };
+i18n.translations = { tr, en, de, fr };
 
 i18n.locale = Localization.locale;
 i18n.fallbacks = true;

@@ -48,5 +48,11 @@
   "Your currency should be at least 20": "Dein Kredit sollte mindestens 20 sein",
   "PayPal ID": "PayPal ID",
   "Papara ID": "Papara ID",
-  "You didn't join any campaign yet": "Du hast an einem Campaign noch nicht teilgenommen."
+  "You didn't join any campaign yet": "Du hast an einem Campaign noch nicht teilgenommen.",
+  "Please fill every question in the test before submit your answers": "Bitte beantworten Sie alle Fragen im Test, bevor Sie den Bogen einreichen",
+  "Please enter your number": "Geben Sie bitte Ihre Nummer",
+  "Your number": "Ihre Nummer",
+  "This ID is already in use": "Diese ID ist schon in Verwendung.",
+  "You cannot change your payment information once you enter Please contact our team if any error occurs": "Sie können Ihre Zahlungsinformationen nicht später ändern. Bitte kontaktieren Sie unser Team, falls ein Fehler auftritt.",
+  "Contact hello@usersmagiccom if you have any problem concerning our services We will respond you within a week": "Kontaktieren Sie hello@usersmagic.com, falls Sie ein Problem bezüglich unserer Services haben. Wir wenden uns an Sie innerhalb einer Woche zurück."
 }

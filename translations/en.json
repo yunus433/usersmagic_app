@@ -49,5 +49,11 @@
   "Your currency should be at least 20": "Your currency should be at least 20",
   "PayPal ID": "PayPal ID",
   "Papara ID": "Papara ID",
-  "You didn't join any campaign yet": "You didn't join any campaign yet."
+  "You didn't join any campaign yet": "You didn't join any campaign yet.",
+  "Please fill every question in the test before submit your answers": "Please fill every question in the test before submit your answers",
+  "Please enter your number": "Please enter your number",
+  "Your number": "Your number",
+  "This ID is already in use": "This ID is already in use",
+  "You cannot change your payment information once you enter Please contact our team if any error occurs": "You cannot change your payment information once you enter. Please contact our team if any error occurs.",
+  "Contact hello@usersmagiccom if you have any problem concerning our services We will respond you within a week": "Contact hello@usersmagic.com if you have any problem concerning our services. We will respond you within a week."
 }

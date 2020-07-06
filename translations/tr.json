@@ -48,5 +48,11 @@
   "Your currency should be at least 20": "Bakiyende bulunması gereken minimum tutar: 20",
   "PayPal ID": "PayPal Numarası",
   "Papara ID": "Papara Numarası",
-  "You didn't join any campaign yet": "Henüz hiçbir kampanyaya katılmadınız."
+  "You didn't join any campaign yet": "Henüz hiçbir kampanyaya katılmadınız.",
+  "Please fill every question in the test before submit your answers": "Lütfen bütün soruları cevaplayın",
+  "Please enter your number": "Lütfen numaranızı girin",
+  "Your number": "Numaranız",
+  "This ID is already in use": "Bu ID zaten kullanılıyor.",
+  "You cannot change your payment information once you enter Please contact our team if any error occurs": "Ödeme bilgilerinizi bir kere girdikten sonra değiştiremezsiniz. Herhangi bir sorunda lütfen temsilcilerimiz ile etkileşime geçin.",
+  "Contact hello@usersmagiccom if you have any problem concerning our services We will respond you within a week": "Ürünümüz ile ilgili herhangi bir sorununuz olursa hello@usersmagic.com adresinden bize ulaşabilirsiniz. Size bir hafta içinde geri dönüş yapacağız."
 }
